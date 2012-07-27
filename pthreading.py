@@ -30,7 +30,7 @@ Take a look at threading.py of Python 2. Notice that Event.wait() wakes 20
 times a second and checks if the event has been set. This CPU hogging has been
 fixed in Python 3, but is not expected to change during Python 2 lifetime.
 
-To avoid this waste of resources, put in your main module
+To avoid this waste of resources, put in your main module::
 
     import pthreading
     pthreading monkey_patch()
@@ -39,7 +39,9 @@ This would hack the Linux-native threading module, and make it use Linux-native
 POSIX synchronization objects.
 
 The pthreading code was originally written as part of
-`Vdsm <http://wiki.ovirt.org/wiki/Vdsm>`_.
+`Vdsm <http://wiki.ovirt.org/wiki/Vdsm>`_ by Cyril Plisko, Saggi Mizrahi and
+others. For questions, comments and patches please contact `vdsm-devel
+<mailto:vdsm-devel@lists.fedorahosted.org>`_.
 """
 
 import time
