@@ -3,7 +3,6 @@ from distutils.cmd import Command
 from unittest import TextTestRunner, TestLoader
 
 import pthreading
-import tests
 
 
 class TestCommand(Command):
@@ -17,6 +16,8 @@ class TestCommand(Command):
         pass
 
     def run(self):
+        import tests
+
         loader = TestLoader()
         t = TextTestRunner()
         t.run(loader.loadTestsFromModule(tests))
