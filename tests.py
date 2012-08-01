@@ -30,20 +30,35 @@ class TestCaseBase(unittest.TestCase):
 
 
 class LockTests(TestCaseBase):
-    def testAcquire(self):
-        lock = pthreading.Lock()
-        self.assertTrue(lock.acquire)
+    def _testAcquire(self, lock):
+        self.assertTrue(lock.acquire())
 
-    def testRelease(self):
-        lock = pthreading.Lock()
+    def _testRelease(self, lock):
         lock.acquire()
         lock.release()
         self.assertTrue(lock.acquire(False))
+
+    def testAcquireLock(self):
+        self._testAcquire(pthreading.Lock())
+
+    def testAcquireRLock(self):
+        self._testAcquire(pthreading.RLock())
+
+    def testReleaseLock(self):
+        self._testRelease(pthreading.Lock())
+
+    def testReleaseRLock(self):
+        self._testRelease(pthreading.RLock())
 
     def testAcquireNonblocking(self):
         lock = pthreading.Lock()
         lock.acquire()
         self.assertFalse(lock.acquire(False))
+
+    def testAcquireRecursive(self):
+        lock = pthreading.RLock()
+        self.assertTrue(lock.acquire())
+        self.assertTrue(lock.acquire(False))
 
 
 class Flag(object):
@@ -151,6 +166,24 @@ class ConditionTests(TestCaseBase):
         Exercise Condition.wait() with 0.3s timeout (fraction of a second)
         """
         self.testBaseTest(lock=pthreading.Lock(), timeout=0.3)
+
+    def testNotifyWithUserProvidedRLock(self):
+        """
+        Exercise Condition.notify()
+        """
+        self.testBaseTest(lock=pthreading.RLock())
+
+    def testWaitIntegerTimeoutWithUserProvidedRLock(self):
+        """
+        Exercise Condition.wait() with 1s timeout
+        """
+        self.testBaseTest(lock=pthreading.RLock(), timeout=1)
+
+    def testWaitFloatTimeoutWithUserProvidedRLock(self):
+        """
+        Exercise Condition.wait() with 0.3s timeout (fraction of a second)
+        """
+        self.testBaseTest(lock=pthreading.RLock(), timeout=0.3)
 
 
 class EventTests(TestCaseBase):

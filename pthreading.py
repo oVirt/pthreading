@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-"""Reimplement threading.Lock and .Condition with libpthread
+"""Reimplement threading.Lock, RLock and Condition with libpthread
 
 The pthreading module provides Lock and Condition synchronization
 objects compatible with Python native threading module.
@@ -78,6 +78,11 @@ class Lock(pthread.Mutex):
         self.unlock()
 
 
+class RLock(Lock):
+    def __init__(self):
+        pthread.Mutex.__init__(self, recursive=True)
+
+
 class Condition(object):
     """
     Condition class mimics Python native threading.Condition() API
@@ -127,3 +132,4 @@ def monkey_patch():
 
     threading.Condition = Condition
     threading.Lock = Lock
+    threading.RLock = RLock
