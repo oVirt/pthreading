@@ -102,7 +102,11 @@ class Condition(object):
     def __exit__(self, *args):
         return self.__lock.__exit__(*args)
 
-    def wait(self, timeout=None):
+    def wait(self, timeout=None, balancing=True):
+        # Balancing is an undocumented argument for Condition.wait()
+        # It is relevent in python because it busy loops. Since the whole
+        # purpose of this package is to not busy loop we just silently ignore
+        # this argument.
         if timeout is not None:
             bailout = time.time() + timeout
             abstime = pthread.timespec()
