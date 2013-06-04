@@ -23,7 +23,7 @@ class TestCommand(Command):
         t.run(loader.loadTestsFromModule(tests))
 
 setup(name='pthreading',
-      version='0.1.1',
+      version='0.1.2',
       license='GPLv2+',
       url='http://git.fedorahosted.org/git/?p=pthreading.git',
       maintainer='Dan Kenigsberg',
