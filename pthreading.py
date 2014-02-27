@@ -127,13 +127,15 @@ class Condition(object):
 
 def monkey_patch():
     """
-    Hack threading module to use our classes
+    Hack threading and thread modules to use our classes
 
     Thus, Queue and SocketServer can easily enjoy them.
     """
 
-    import threading
+    import thread
+    thread.allocate_lock = Lock
 
+    import threading
     threading.Condition = Condition
     threading.Lock = Lock
     threading.RLock = RLock
