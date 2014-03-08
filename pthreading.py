@@ -38,6 +38,10 @@ To avoid this waste of resources, put in your main module::
 This would hack the Linux-native threading module, and make it use Linux-native
 POSIX synchronization objects.
 
+Note: you must invoke pthreading.monkey_patch before importing the thread and
+threading modules. If these modules are already imported, monkey_patch will
+raise a RuntimeError.
+
 The pthreading code was originally written as part of
 `Vdsm <http://wiki.ovirt.org/wiki/Vdsm>`_ by Cyril Plisko, Saggi Mizrahi and
 others. For questions, comments and patches please contact `vdsm-devel
@@ -47,6 +51,7 @@ others. For questions, comments and patches please contact `vdsm-devel
 import time
 import errno
 import os
+import sys
 
 import pthread
 
@@ -131,6 +136,13 @@ def monkey_patch():
 
     Thus, Queue and SocketServer can easily enjoy them.
     """
+    if 'thread' in sys.modules or 'threading' in sys.modules:
+        # If thread was imported, some module may be using now the original
+        # thread.allocate_lock. If threading was imported, it is already using
+        # thread.allocate_lock for internal locks. Mixing different lock types
+        # is a bad idea.
+        raise RuntimeError("You must monkey_patch before importing thread or "
+                           "threading modules")
 
     import thread
     thread.allocate_lock = Lock
