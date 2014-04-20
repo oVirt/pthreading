@@ -127,9 +127,9 @@ class Condition(object):
             abstime = pthread.timespec()
             abstime.tv_sec = int(bailout)
             abstime.tv_nsec = int((bailout - int(bailout)) * (10 ** 9))
-            return self.__cond.timedwait(abstime)
+            self.__cond.timedwait(abstime)
         else:
-            return self.__cond.wait()
+            self.__cond.wait()
 
     def notify(self):
         return self.__cond.signal()
