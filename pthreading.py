@@ -124,12 +124,25 @@ class Condition(object):
         # this argument.
         if timeout is not None:
             bailout = time.time() + timeout
-            abstime = pthread.timespec()
-            abstime.tv_sec = int(bailout)
-            abstime.tv_nsec = int((bailout - int(bailout)) * (10 ** 9))
-            self.__cond.timedwait(abstime)
+            self.wait_until(bailout)
         else:
             self.__cond.wait()
+
+    def wait_until(self, bailout):
+        """
+        Waits until bailout time has passed or the condtion is notified.
+
+        This may return before bailout time if notify() or notify_all() were
+        invoked, or because of spurious wakeup of the underlying
+        implementation. You must check the return value to detect if bailout
+        time has passed.
+
+        Return True if bailout timeout has passed, False otherwise.
+        """
+        abstime = pthread.timespec()
+        abstime.tv_sec = int(bailout)
+        abstime.tv_nsec = int((bailout - int(bailout)) * (10 ** 9))
+        return self.__cond.timedwait(abstime) == errno.ETIMEDOUT
 
     def notify(self):
         return self.__cond.signal()
@@ -138,6 +151,75 @@ class Condition(object):
         return self.__cond.broadcast()
 
     notify_all = notifyAll
+
+
+class Event(object):
+    # After Tim Peters' event class (without is_posted())
+
+    def __init__(self, verbose=None):
+        self.__cond = Condition(Lock())
+        self.__flag = False
+
+    def _reset_internal_locks(self):
+        # private!  called by Thread._reset_internal_locks by _after_fork()
+        self.__cond.__init__()
+
+    def isSet(self):
+        'Return true if and only if the internal flag is true.'
+        return self.__flag
+
+    is_set = isSet
+
+    def set(self):
+        """Set the internal flag to true.
+
+        All threads waiting for the flag to become true are awakened. Threads
+        that call wait() once the flag is true will not block at all.
+
+        """
+        with self.__cond:
+            self.__flag = True
+            self.__cond.notify_all()
+
+    def clear(self):
+        """Reset the internal flag to false.
+
+        Subsequently, threads calling wait() will block until set() is called to
+        set the internal flag to true again.
+
+        """
+        with self.__cond:
+            self.__flag = False
+
+    def wait(self, timeout=None, balancing=True):
+        """Block until the internal flag is true.
+
+        If the internal flag is true on entry, return immediately. Otherwise,
+        block until another thread calls set() to set the flag to true, or until
+        the optional timeout occurs.
+
+        When the timeout argument is present and not None, it should be a
+        floating point number specifying a timeout for the operation in seconds
+        (or fractions thereof).
+
+        This method returns the internal flag on exit, so it will always return
+        True except if a timeout is given and the operation times out.
+
+        """
+        # Compute the bailout before taking the lock, since taking the lock may
+        # block, enlarging the requested timeout.
+        if timeout is not None:
+            bailout = time.time() + timeout
+
+        with self.__cond:
+            if timeout is not None:
+                while not self.__flag:
+                    if self.__cond.wait_until(bailout):
+                        break # Timeout expired
+            else:
+                while not self.__flag:
+                    self.__cond.wait()
+            return self.__flag
 
 
 def monkey_patch():
@@ -161,3 +243,4 @@ def monkey_patch():
     threading.Condition = Condition
     threading.Lock = Lock
     threading.RLock = RLock
+    threading.Event = Event

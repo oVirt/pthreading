@@ -248,7 +248,7 @@ class ConditionTests(TestCaseBase):
 class EventTests(TestCaseBase):
     def _test(self, timeout):
         self.log.info("Creating Event object")
-        e = threading.Event()
+        e = pthreading.Event()
 
         def setter():
             self.log.info("Setter thread is sleeping")
@@ -271,14 +271,14 @@ class EventTests(TestCaseBase):
 
     def testNotPassTimeout(self):
         self.log.info("Creating Event object")
-        e = threading.Event()
+        e = pthreading.Event()
         self.log.info("Waiting for salvation (That will never come)")
         res = e.wait(0.5)
         self.assertFalse(res)
 
     def testZeroTimeout(self):
         self.log.info("Creating Event object")
-        e = threading.Event()
+        e = pthreading.Event()
         self.log.info("Waiting 0 for salvation (That will never come)")
         res = e.wait(0)
         self.assertFalse(res)
