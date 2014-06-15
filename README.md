@@ -8,7 +8,7 @@ To avoid this waste of resources, put in your main module:
 
 ```python
 import pthreading
-pthreading monkey_patch()
+pthreading.monkey_patch()
 ```
 
 This would hack the Linux-native threading module, and make it use Linux-native POSIX synchronization objects.
