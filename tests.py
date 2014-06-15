@@ -17,16 +17,68 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import functools
 import threading
 import unittest
 import logging
 from time import sleep
+import sys
 
 import pthreading
 
 
 class TestCaseBase(unittest.TestCase):
     log = logging.getLogger('test')
+
+
+def without_module(name):
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*a, **kw):
+            module = sys.modules.pop(name)
+            try:
+                return f(*a, **kw)
+            finally:
+                sys.modules[name] = module
+        return wrapper
+    return decorator
+
+
+class WithoutModuleTests(TestCaseBase):
+
+    def setUp(self):
+        self.assertIn('sys', sys.modules)
+
+    def tearDown(self):
+        self.assertIn('sys', sys.modules)
+
+    @without_module('sys')
+    def testWithout(self):
+        self.assertNotIn('sys', sys.modules)
+
+
+class MonkeyPatchTests(TestCaseBase):
+
+    @without_module('thread')
+    @without_module('threading')
+    def testMonkeyPatch(self):
+        pthreading.monkey_patch()
+        import thread
+        import threading
+        self.assertEquals(thread.allocate_lock, pthreading.Lock)
+        self.assertEquals(threading.Lock, pthreading.Lock)
+        self.assertEquals(threading.RLock, pthreading.RLock)
+        self.assertEquals(threading.Condition, pthreading.Condition)
+
+    @without_module('thread')
+    def testMonkeyPatchRaisesThread(self):
+        assert 'threading' in sys.modules
+        self.assertRaises(RuntimeError, pthreading.monkey_patch)
+
+    @without_module('threading')
+    def testMonkeyPatchRaisesThreading(self):
+        assert 'thread' in sys.modules
+        self.assertRaises(RuntimeError, pthreading.monkey_patch)
 
 
 class LockTests(TestCaseBase):
