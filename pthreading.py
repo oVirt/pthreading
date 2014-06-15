@@ -51,9 +51,9 @@ import os
 import pthread
 
 
-class Lock(pthread.Mutex):
+class _Lock(pthread.Mutex):
     """
-    Lock class mimics Python native threading.Lock() API on top of
+    _Lock class mimics Python native threading.Lock() API on top of
     the POSIX thread mutex synchronization primitive.
     """
     def __enter__(self):
@@ -78,9 +78,19 @@ class Lock(pthread.Mutex):
         self.unlock()
 
 
+class Lock(_Lock):
+    def locked(self):
+        # Yes, this is horrible hack, and the same one used by Python
+        # threadmodule.c. But this is part of Python lock interface.
+        if self.acquire(blocking=False):
+            self.release()
+            return False
+        return True
+
+
 class RLock(Lock):
     def __init__(self):
-        pthread.Mutex.__init__(self, recursive=True)
+        _Lock.__init__(self, recursive=True)
 
 
 class Condition(object):

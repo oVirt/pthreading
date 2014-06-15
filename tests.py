@@ -60,6 +60,13 @@ class LockTests(TestCaseBase):
         self.assertTrue(lock.acquire())
         self.assertTrue(lock.acquire(False))
 
+    def testLocked(self):
+        lock = pthreading.Lock()
+        self.assertFalse(lock.locked())
+        with lock:
+            self.assertTrue(lock.locked())
+        self.assertFalse(lock.locked())
+
 
 class Flag(object):
     def __init__(self):
