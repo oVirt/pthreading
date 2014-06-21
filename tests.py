@@ -21,8 +21,9 @@ import functools
 import threading
 import unittest
 import logging
-from time import sleep
+from time import sleep, time
 import sys
+from contextlib import contextmanager
 
 import pthreading
 
@@ -133,129 +134,201 @@ class LockTests(TestCaseBase):
         self.assertFalse(lock.locked())
 
 
-class Flag(object):
-    def __init__(self):
-        self._flag = False
+class ConditionTest(TestCaseBase):
 
-    def __nonzero__(self):
-        return self._flag
+    CONCURRENCY = 10
+    log = logging.getLogger("ConditionTest")
 
-    def set(self):
-        self._flag = True
+    def setUp(self):
+        self.waiting = 0
+        self.wokeup = 0
+        self.cond = None
 
-    def clear(self):
-        self._flag = False
+    @contextmanager
+    def running(self, func):
+        """
+        Starts CONCURRENCY threads running func. Yields when all threads are
+        waiting.
+        """
+        waiters = []
+        try:
+            self.log.info("Starting waiter threads")
+            for n in range(self.CONCURRENCY):
+                t = threading.Thread(target=func)
+                t.daemon = True
+                t.start()
+                waiters.append(t)
+
+            self.log.info("Waiting for waiter threads")
+            while True:
+                sleep(0.05)
+                with self.cond:
+                    if self.waiting == self.CONCURRENCY:
+                        break
+            self.log.info("Waiter threads ready")
+            with self.cond:
+                self.assertEquals(self.wokeup, 0)
+
+            yield
+        finally:
+            self.log.info("Joining waiter threads")
+            for t in waiters:
+                t.join()
 
 
-class ConditionTests(TestCaseBase):
-    def testBaseTest(self, lock=None, timeout=None):
-        """
-        Base Condition exerciser
-        """
-        flag = Flag()
-        c = pthreading.Condition(lock)
+class ConditionNotifyTests(ConditionTest):
+    """
+    Test that Condition.wait() returns after notify().
+    """
 
-        def setter(flag):
-            sleep(2)
-            with c:
-                flag.set()
-                c.notify()
-        threading.Thread(target=setter, args=(flag,)).start()
-        with c:
-            while not flag:
-                self.log.debug("main waits")
-                c.wait(timeout)
+    def check(self, lock):
+        self.cond = pthreading.Condition(lock)
 
-        self.assertTrue(flag)
+        for i in range(self.CONCURRENCY):
+            with self.cond:
+                self.cond.notify()
 
-    def testNotifyAll(self, lock=None):
-        """
-        Exercise Condition.notifyAll()
-        """
-        flag = Flag()
-        c = pthreading.Condition(lock)
+        def waiter():
+            with self.cond:
+                self.waiting += 1
+                self.cond.wait()
+                self.wokeup += 1
 
-        def setter(flag):
-            sleep(2)
-            with c:
-                flag.set()
-                c.notifyAll()
-        threading.Thread(target=setter, args=(flag,)).start()
-        with c:
-            while not flag:
-                c.wait()
+        with self.running(waiter):
+            self.log.info("Notifying waiter threads")
+            for i in range(self.CONCURRENCY):
+                with self.cond:
+                    self.cond.notify()
 
-        self.assertTrue(flag)
+        self.assertEquals(self.wokeup, self.CONCURRENCY)
 
-    def testXWait(self, lock=None):
-        """
-        Exercise Condition.wait() with 1s timeout that never become true
-        """
-        self.log.info("Creating Condition object")
-        flag = Flag()
-        c = pthreading.Condition(lock)
-        tired = 0
-        with c:
-            while not flag and tired < 5:
-                self.log.debug("main waits")
-                c.wait(1)
-                tired = 5
+    def testDefaultLock(self):
+        self.check(lock=None)
 
-        self.assertFalse(flag)
+    def testLock(self):
+        self.check(lock=pthreading.Lock())
 
-    def testNotify(self):
-        """
-        Exercise Condition.notify()
-        """
-        self.testBaseTest()
+    def testRLock(self):
+        self.check(lock=pthreading.RLock())
 
-    def testWaitIntegerTimeout(self):
-        """
-        Exercise Condition.wait() with 1s timeout
-        """
-        self.testBaseTest(timeout=1)
 
-    def testWaitFloatTimeout(self):
-        """
-        Exercise Condition.wait() with 0.3s timeout (fraction of a second)
-        """
-        self.testBaseTest(timeout=0.3)
+class ConditionNotifyAllTests(ConditionTest):
+    """
+    Test that Condition.wait() returns after notifyAll().
+    """
 
-    def testNotifyWithUserProvidedLock(self):
-        """
-        Exercise Condition.notify()
-        """
-        self.testBaseTest(lock=pthreading.Lock())
+    def check(self, lock):
+        self.cond = pthreading.Condition(lock)
 
-    def testWaitIntegerTimeoutWithUserProvidedLock(self):
-        """
-        Exercise Condition.wait() with 1s timeout
-        """
-        self.testBaseTest(lock=pthreading.Lock(), timeout=1)
+        with self.cond:
+            self.cond.notifyAll()
 
-    def testWaitFloatTimeoutWithUserProvidedLock(self):
-        """
-        Exercise Condition.wait() with 0.3s timeout (fraction of a second)
-        """
-        self.testBaseTest(lock=pthreading.Lock(), timeout=0.3)
+        def waiter():
+            with self.cond:
+                self.waiting += 1
+                self.cond.wait()
+                self.wokeup += 1
 
-    def testNotifyWithUserProvidedRLock(self):
-        """
-        Exercise Condition.notify()
-        """
-        self.testBaseTest(lock=pthreading.RLock())
+        with self.running(waiter):
+            self.log.info("Notifying waiter threads")
+            with self.cond:
+                self.cond.notifyAll()
 
-    def testWaitIntegerTimeoutWithUserProvidedRLock(self):
-        """
-        Exercise Condition.wait() with 1s timeout
-        """
-        self.testBaseTest(lock=pthreading.RLock(), timeout=1)
+        self.assertEquals(self.wokeup, self.CONCURRENCY)
 
-    def testWaitFloatTimeoutWithUserProvidedRLock(self):
-        """
-        Exercise Condition.wait() with 0.3s timeout (fraction of a second)
-        """
-        self.testBaseTest(lock=pthreading.RLock(), timeout=0.3)
+    def testDefaultLock(self):
+        self.check(lock=None)
+
+    def testLock(self):
+        self.check(lock=pthreading.Lock())
+
+    def testRLock(self):
+        self.check(lock=pthreading.RLock())
+
+
+class ConditionTimeoutTests(ConditionTest):
+    """
+    Test that Condition.wait(timeout) returns after deadline.
+    """
+
+    def check(self, lock, timeout):
+        self.cond = pthreading.Condition(lock)
+        self.wokeup_before_deadline = 0
+        self.wokeup_after_deadline = 0
+
+        def waiter():
+            with self.cond:
+                deadline = time() + timeout
+                self.waiting += 1
+                self.cond.wait(timeout)
+                if time() < deadline:
+                    self.wokeup_before_deadline += 1
+                else:
+                    self.wokeup_after_deadline += 1
+
+        with self.running(waiter):
+            pass
+
+        self.assertEquals(self.wokeup_before_deadline, 0)
+        self.assertEquals(self.wokeup_after_deadline, self.CONCURRENCY)
+
+    def testIntegerDefaultLock(self):
+        self.check(lock=None, timeout=1)
+
+    def testIntegerLock(self):
+        self.check(lock=pthreading.Lock(), timeout=1)
+
+    def testIntegerRLock(self):
+        self.check(lock=pthreading.RLock(), timeout=1)
+
+    def testFloatDefaultLock(self):
+        self.check(lock=None, timeout=0.1)
+
+    def testFloatLock(self):
+        self.check(lock=pthreading.Lock(), timeout=0.1)
+
+    def testFloatRLock(self):
+        self.check(lock=pthreading.RLock(), timeout=0.1)
+
+
+class ConditionTimeoutNotifyTests(ConditionTest):
+    """
+    Test that Condition.wait(timeout) return before deadline on notify().
+    """
+
+    TIMEOUT = 1
+
+    def check(self, lock):
+        self.cond = pthreading.Condition(lock)
+        self.wokeup_before_deadline = 0
+        self.wokeup_after_deadline = 0
+
+        def waiter():
+            with self.cond:
+                deadline = time() + self.TIMEOUT
+                self.waiting += 1
+                self.cond.wait(self.TIMEOUT)
+                if time() < deadline:
+                    self.wokeup_before_deadline += 1
+                else:
+                    self.wokeup_after_deadline += 1
+
+        with self.running(waiter):
+            self.log.info("Notifying waiter threads")
+            with self.cond:
+                self.cond.notifyAll()
+
+        self.assertEquals(self.wokeup_before_deadline, self.CONCURRENCY)
+        self.assertEquals(self.wokeup_after_deadline, 0)
+
+    def testDefaultLock(self):
+        self.check(lock=None)
+
+    def testLock(self):
+        self.check(lock=pthreading.Lock())
+
+    def testRLock(self):
+        self.check(lock=pthreading.RLock())
 
 
 class EventTests(TestCaseBase):
