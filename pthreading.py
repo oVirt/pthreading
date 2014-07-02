@@ -135,7 +135,7 @@ class Condition(object):
             self.__waiters -= 1
 
     def notify(self):
-        if self.__signals <  self.__waiters:
+        if self.__signals < self.__waiters:
             self.__signals += 1
         return self.__cond.signal()
 
@@ -166,6 +166,7 @@ class Condition(object):
 
 
 _is_monkey_patched = False
+
 
 def monkey_patch():
     """

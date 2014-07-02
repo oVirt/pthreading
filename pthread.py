@@ -73,7 +73,7 @@ class Mutex(object):
             attr = C.byref(mutexattr_t())
             _libpthread.pthread_mutexattr_init(attr)
             _libpthread.pthread_mutexattr_settype(
-                        attr, C.c_int(PTHREAD_MUTEX_RECURSIVE))
+                attr, C.c_int(PTHREAD_MUTEX_RECURSIVE))
         else:
             attr = None
 
@@ -133,4 +133,4 @@ class Cond(object):
     def timedwait(self, abstime, mutex=None):
         m = mutex if mutex else self._lock
         return _libpthread.pthread_cond_timedwait(self._cond, m.mutex(),
-            C.pointer(abstime))
+                                                  C.pointer(abstime))
