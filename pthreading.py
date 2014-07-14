@@ -222,12 +222,19 @@ class Event(object):
             return self.__flag
 
 
+_is_monkey_patched = False
+
 def monkey_patch():
     """
     Hack threading and thread modules to use our classes
 
     Thus, Queue and SocketServer can easily enjoy them.
     """
+    global _is_monkey_patched
+
+    if _is_monkey_patched:
+        return
+
     if 'thread' in sys.modules or 'threading' in sys.modules:
         # If thread was imported, some module may be using now the original
         # thread.allocate_lock. If threading was imported, it is already using
@@ -244,3 +251,5 @@ def monkey_patch():
     threading.Lock = Lock
     threading.RLock = RLock
     threading.Event = Event
+
+    _is_monkey_patched = True

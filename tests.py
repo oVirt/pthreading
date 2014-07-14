@@ -59,16 +59,21 @@ class WithoutModuleTests(TestCaseBase):
 
 class MonkeyPatchTests(TestCaseBase):
 
+    def tearDown(self):
+        pthreading._is_monkey_patched = False
+
     @without_module('thread')
     @without_module('threading')
     def testMonkeyPatch(self):
         pthreading.monkey_patch()
-        import thread
-        import threading
-        self.assertEquals(thread.allocate_lock, pthreading.Lock)
-        self.assertEquals(threading.Lock, pthreading.Lock)
-        self.assertEquals(threading.RLock, pthreading.RLock)
-        self.assertEquals(threading.Condition, pthreading.Condition)
+        self.checkMonkeyPatch()
+
+    @without_module('thread')
+    @without_module('threading')
+    def testMonkeyPatchTwice(self):
+        pthreading.monkey_patch()
+        pthreading.monkey_patch()
+        self.checkMonkeyPatch()
 
     @without_module('thread')
     def testMonkeyPatchRaisesThread(self):
@@ -79,6 +84,14 @@ class MonkeyPatchTests(TestCaseBase):
     def testMonkeyPatchRaisesThreading(self):
         assert 'thread' in sys.modules
         self.assertRaises(RuntimeError, pthreading.monkey_patch)
+
+    def checkMonkeyPatch(self):
+        import thread
+        import threading
+        self.assertEquals(thread.allocate_lock, pthreading.Lock)
+        self.assertEquals(threading.Lock, pthreading.Lock)
+        self.assertEquals(threading.RLock, pthreading.RLock)
+        self.assertEquals(threading.Condition, pthreading.Condition)
 
 
 class LockTests(TestCaseBase):
