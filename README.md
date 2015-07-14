@@ -35,7 +35,7 @@ To perform pep8 check and run the tests:
 
 To run only pep8 or the tests, specify the tox env:
 
-    tox -e unittests
+    tox -e test
 
 For more control over the tests, use py.test directly. In this example
 we are running only the Event tests, using verbose mode, and aborting on
