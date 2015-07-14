@@ -54,7 +54,7 @@ class WithoutModuleTests(TestCaseBase):
         self.assertIn('sys', sys.modules)
 
     @without_module('sys')
-    def testWithout(self):
+    def test_without_module(self):
         self.assertNotIn('sys', sys.modules)
 
 
@@ -65,28 +65,28 @@ class MonkeyPatchTests(TestCaseBase):
 
     @without_module('thread')
     @without_module('threading')
-    def testMonkeyPatch(self):
+    def test_monkey_patch(self):
         pthreading.monkey_patch()
-        self.checkMonkeyPatch()
+        self.check_monkey_patch()
 
     @without_module('thread')
     @without_module('threading')
-    def testMonkeyPatchTwice(self):
+    def test_monkey_patch_twice(self):
         pthreading.monkey_patch()
         pthreading.monkey_patch()
-        self.checkMonkeyPatch()
+        self.check_monkey_patch()
 
     @without_module('thread')
-    def testMonkeyPatchRaisesThread(self):
+    def test_monkey_patch_raises_thread(self):
         assert 'threading' in sys.modules
         self.assertRaises(RuntimeError, pthreading.monkey_patch)
 
     @without_module('threading')
-    def testMonkeyPatchRaisesThreading(self):
+    def test_monkey_patch_raises_threading(self):
         assert 'thread' in sys.modules
         self.assertRaises(RuntimeError, pthreading.monkey_patch)
 
-    def checkMonkeyPatch(self):
+    def check_monkey_patch(self):
         import thread
         import threading
         self.assertEquals(thread.allocate_lock, pthreading.Lock)
@@ -96,37 +96,37 @@ class MonkeyPatchTests(TestCaseBase):
 
 
 class LockTests(TestCaseBase):
-    def _testAcquire(self, lock):
+    def _test_acquire(self, lock):
         self.assertTrue(lock.acquire())
 
-    def _testRelease(self, lock):
+    def _test_release(self, lock):
         lock.acquire()
         lock.release()
         self.assertTrue(lock.acquire(False))
 
-    def testAcquireLock(self):
-        self._testAcquire(pthreading.Lock())
+    def test_acquire_lock(self):
+        self._test_acquire(pthreading.Lock())
 
-    def testAcquireRLock(self):
-        self._testAcquire(pthreading.RLock())
+    def test_acquire_rlock(self):
+        self._test_acquire(pthreading.RLock())
 
-    def testReleaseLock(self):
-        self._testRelease(pthreading.Lock())
+    def test_release_lock(self):
+        self._test_release(pthreading.Lock())
 
-    def testReleaseRLock(self):
-        self._testRelease(pthreading.RLock())
+    def test_release_rlock(self):
+        self._test_release(pthreading.RLock())
 
-    def testAcquireNonblocking(self):
+    def test_acquire_nonblocking(self):
         lock = pthreading.Lock()
         lock.acquire()
         self.assertFalse(lock.acquire(False))
 
-    def testAcquireRecursive(self):
+    def test_acquire_recursive(self):
         lock = pthreading.RLock()
         self.assertTrue(lock.acquire())
         self.assertTrue(lock.acquire(False))
 
-    def testLocked(self):
+    def test_locked(self):
         lock = pthreading.Lock()
         self.assertFalse(lock.locked())
         with lock:
@@ -202,13 +202,13 @@ class ConditionNotifyTests(ConditionTest):
 
         self.assertEquals(self.wokeup, self.CONCURRENCY)
 
-    def testDefaultLock(self):
+    def test_default_lock(self):
         self.check(lock=None)
 
-    def testLock(self):
+    def test_lock(self):
         self.check(lock=pthreading.Lock())
 
-    def testRLock(self):
+    def test_rlock(self):
         self.check(lock=pthreading.RLock())
 
 
@@ -236,13 +236,13 @@ class ConditionNotifyAllTests(ConditionTest):
 
         self.assertEquals(self.wokeup, self.CONCURRENCY)
 
-    def testDefaultLock(self):
+    def test_default_lock(self):
         self.check(lock=None)
 
-    def testLock(self):
+    def test_lock(self):
         self.check(lock=pthreading.Lock())
 
-    def testRLock(self):
+    def test_rlock(self):
         self.check(lock=pthreading.RLock())
 
 
@@ -272,22 +272,22 @@ class ConditionTimeoutTests(ConditionTest):
         self.assertEquals(self.wokeup_before_deadline, 0)
         self.assertEquals(self.wokeup_after_deadline, self.CONCURRENCY)
 
-    def testIntegerDefaultLock(self):
+    def test_integer_default_lock(self):
         self.check(lock=None, timeout=1)
 
-    def testIntegerLock(self):
+    def test_integer_lock(self):
         self.check(lock=pthreading.Lock(), timeout=1)
 
-    def testIntegerRLock(self):
+    def test_integer_rlock(self):
         self.check(lock=pthreading.RLock(), timeout=1)
 
-    def testFloatDefaultLock(self):
+    def test_float_default_lock(self):
         self.check(lock=None, timeout=0.1)
 
-    def testFloatLock(self):
+    def test_float_lock(self):
         self.check(lock=pthreading.Lock(), timeout=0.1)
 
-    def testFloatRLock(self):
+    def test_float_rlock(self):
         self.check(lock=pthreading.RLock(), timeout=0.1)
 
 
@@ -321,13 +321,13 @@ class ConditionTimeoutNotifyTests(ConditionTest):
         self.assertEquals(self.wokeup_before_deadline, self.CONCURRENCY)
         self.assertEquals(self.wokeup_after_deadline, 0)
 
-    def testDefaultLock(self):
+    def test_default_lock(self):
         self.check(lock=None)
 
-    def testLock(self):
+    def test_lock(self):
         self.check(lock=pthreading.Lock())
 
-    def testRLock(self):
+    def test_rlock(self):
         self.check(lock=pthreading.RLock())
 
 
@@ -349,20 +349,20 @@ class EventTests(TestCaseBase):
         res = e.wait(timeout)
         self.assertTrue(res is not False)
 
-    def testPassWithTimeout(self):
+    def test_pass_with_timeout(self):
         self._test(5)
 
-    def testPassWithoutTimeout(self):
+    def test_pass_without_timeout(self):
         self._test(None)
 
-    def testNotPassTimeout(self):
+    def test_not_pass_timeout(self):
         self.log.info("Creating Event object")
         e = threading.Event()
         self.log.info("Waiting for salvation (That will never come)")
         res = e.wait(0.5)
         self.assertFalse(res)
 
-    def testZeroTimeout(self):
+    def test_zero_timeout(self):
         self.log.info("Creating Event object")
         e = threading.Event()
         self.log.info("Waiting 0 for salvation (That will never come)")
