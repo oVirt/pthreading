@@ -27,9 +27,7 @@ from contextlib import contextmanager
 
 import pthreading
 
-
-class TestCaseBase(unittest.TestCase):
-    log = logging.getLogger('test')
+log = logging.getLogger('test')
 
 
 def without_module(name):
@@ -45,7 +43,7 @@ def without_module(name):
     return decorator
 
 
-class WithoutModuleTests(TestCaseBase):
+class WithoutModuleTests(unittest.TestCase):
 
     def setUp(self):
         self.assertIn('sys', sys.modules)
@@ -58,7 +56,7 @@ class WithoutModuleTests(TestCaseBase):
         self.assertNotIn('sys', sys.modules)
 
 
-class MonkeyPatchTests(TestCaseBase):
+class MonkeyPatchTests(unittest.TestCase):
 
     def tearDown(self):
         pthreading._is_monkey_patched = False
@@ -95,7 +93,7 @@ class MonkeyPatchTests(TestCaseBase):
         self.assertEquals(threading.Condition, pthreading.Condition)
 
 
-class LockTests(TestCaseBase):
+class LockTests(unittest.TestCase):
     def _test_acquire(self, lock):
         self.assertTrue(lock.acquire())
 
@@ -134,7 +132,7 @@ class LockTests(TestCaseBase):
         self.assertFalse(lock.locked())
 
 
-class ConditionTest(TestCaseBase):
+class ConditionTest(unittest.TestCase):
 
     CONCURRENCY = 10
     log = logging.getLogger("ConditionTest")
@@ -152,26 +150,26 @@ class ConditionTest(TestCaseBase):
         """
         waiters = []
         try:
-            self.log.info("Starting waiter threads")
+            log.info("Starting waiter threads")
             for n in range(self.CONCURRENCY):
                 t = threading.Thread(target=func)
                 t.daemon = True
                 t.start()
                 waiters.append(t)
 
-            self.log.info("Waiting for waiter threads")
+            log.info("Waiting for waiter threads")
             while True:
                 sleep(0.05)
                 with self.cond:
                     if self.waiting == self.CONCURRENCY:
                         break
-            self.log.info("Waiter threads ready")
+            log.info("Waiter threads ready")
             with self.cond:
                 self.assertEquals(self.wokeup, 0)
 
             yield
         finally:
-            self.log.info("Joining waiter threads")
+            log.info("Joining waiter threads")
             for t in waiters:
                 t.join()
 
@@ -195,7 +193,7 @@ class ConditionNotifyTests(ConditionTest):
                 self.wokeup += 1
 
         with self.running(waiter):
-            self.log.info("Notifying waiter threads")
+            log.info("Notifying waiter threads")
             for i in range(self.CONCURRENCY):
                 with self.cond:
                     self.cond.notify()
@@ -230,7 +228,7 @@ class ConditionNotifyAllTests(ConditionTest):
                 self.wokeup += 1
 
         with self.running(waiter):
-            self.log.info("Notifying waiter threads")
+            log.info("Notifying waiter threads")
             with self.cond:
                 self.cond.notifyAll()
 
@@ -314,7 +312,7 @@ class ConditionTimeoutNotifyTests(ConditionTest):
                     self.wokeup_after_deadline += 1
 
         with self.running(waiter):
-            self.log.info("Notifying waiter threads")
+            log.info("Notifying waiter threads")
             with self.cond:
                 self.cond.notifyAll()
 
@@ -331,21 +329,21 @@ class ConditionTimeoutNotifyTests(ConditionTest):
         self.check(lock=pthreading.RLock())
 
 
-class EventTests(TestCaseBase):
+class EventTests(unittest.TestCase):
     def _test(self, timeout):
-        self.log.info("Creating Event object")
+        log.info("Creating Event object")
         e = threading.Event()
 
         def setter():
-            self.log.info("Setter thread is sleeping")
+            log.info("Setter thread is sleeping")
             sleep(2)
-            self.log.info("Setter thread is setting")
+            log.info("Setter thread is setting")
             e.set()
-            self.log.info("Event object is set (%s) :D", e.is_set())
+            log.info("Event object is set (%s) :D", e.is_set())
 
-        self.log.info("Starting setter thread")
+        log.info("Starting setter thread")
         threading.Thread(target=setter).start()
-        self.log.info("Waiting for salvation")
+        log.info("Waiting for salvation")
         res = e.wait(timeout)
         self.assertTrue(res is not False)
 
@@ -356,16 +354,16 @@ class EventTests(TestCaseBase):
         self._test(None)
 
     def test_not_pass_timeout(self):
-        self.log.info("Creating Event object")
+        log.info("Creating Event object")
         e = threading.Event()
-        self.log.info("Waiting for salvation (That will never come)")
+        log.info("Waiting for salvation (That will never come)")
         res = e.wait(0.5)
         self.assertFalse(res)
 
     def test_zero_timeout(self):
-        self.log.info("Creating Event object")
+        log.info("Creating Event object")
         e = threading.Event()
-        self.log.info("Waiting 0 for salvation (That will never come)")
+        log.info("Waiting 0 for salvation (That will never come)")
         res = e.wait(0)
         self.assertFalse(res)
 
