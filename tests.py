@@ -17,7 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import functools
 import threading
 import logging
 from time import sleep, time
@@ -29,57 +28,31 @@ import pthreading
 log = logging.getLogger('test')
 
 
-def without_module(name):
-    def decorator(f):
-        @functools.wraps(f)
-        def wrapper(*a, **kw):
-            module = sys.modules.pop(name)
-            try:
-                return f(*a, **kw)
-            finally:
-                sys.modules[name] = module
-        return wrapper
-    return decorator
-
-
-class TestWithoutModule:
-
-    def setup_method(self, m):
-        assert 'sys' in sys.modules
-
-    def teardown_method(self, m):
-        assert 'sys' in sys.modules
-
-    @without_module('sys')
-    def test_without_module(self):
-        assert 'sys' not in sys.modules
-
-
 class TestMonkeyPatch:
 
     def teardown_method(self, m):
         pthreading._is_monkey_patched = False
 
-    @without_module('thread')
-    @without_module('threading')
-    def test_monkey_patch(self):
+    def test_monkey_patch(self, monkeypatch):
+        monkeypatch.delitem(sys.modules, "thread")
+        monkeypatch.delitem(sys.modules, "threading")
         pthreading.monkey_patch()
         self.check_monkey_patch()
 
-    @without_module('thread')
-    @without_module('threading')
-    def test_monkey_patch_twice(self):
+    def test_monkey_patch_twice(self, monkeypatch):
+        monkeypatch.delitem(sys.modules, "thread")
+        monkeypatch.delitem(sys.modules, "threading")
         pthreading.monkey_patch()
         pthreading.monkey_patch()
         self.check_monkey_patch()
 
-    @without_module('thread')
-    def test_monkey_patch_raises_thread(self):
+    def test_monkey_patch_raises_thread(self, monkeypatch):
+        monkeypatch.delitem(sys.modules, "thread")
         assert 'threading' in sys.modules
         pytest.raises(RuntimeError, pthreading.monkey_patch)
 
-    @without_module('threading')
-    def test_monkey_patch_raises_threading(self):
+    def test_monkey_patch_raises_threading(self, monkeypatch):
+        monkeypatch.delitem(sys.modules, "threading")
         assert 'thread' in sys.modules
         pytest.raises(RuntimeError, pthreading.monkey_patch)
 
