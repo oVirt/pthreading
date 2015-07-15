@@ -37,8 +37,20 @@ To run only pep8 or the tests, specify the tox env:
 
     tox -e unittests
 
-For more control over the tests, please run tests.py directly with either
-python or nosetests.
+For more control over the tests, use py.test directly. In this example
+we are running only the Event tests, using verbose mode, and aborting on
+the first failure:
+
+    py.test -k EventTests -vx tests.py
+
+In this example we run the tests and create a coverage report in html
+format:
+
+    py.test --cov pthreading --cov pthread --cov-report html tests.py
+
+To view the coverage report, open htmlcov/index.html.
+
+For more info on py.test, please run py.test -h.
 
 ## Acknowledgements
 
