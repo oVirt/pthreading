@@ -67,25 +67,15 @@ class TestMonkeyPatch:
 
 class TestLock:
 
-    def _test_acquire(self, lock):
+    @pytest.mark.parametrize("lock", [pthreading.Lock(), pthreading.RLock()])
+    def test_acquire(self, lock):
         assert lock.acquire()
 
-    def _test_release(self, lock):
+    @pytest.mark.parametrize("lock", [pthreading.Lock(), pthreading.RLock()])
+    def test_release(self, lock):
         lock.acquire()
         lock.release()
         assert lock.acquire(False)
-
-    def test_acquire_lock(self):
-        self._test_acquire(pthreading.Lock())
-
-    def test_acquire_rlock(self):
-        self._test_acquire(pthreading.RLock())
-
-    def test_release_lock(self):
-        self._test_release(pthreading.Lock())
-
-    def test_release_rlock(self):
-        self._test_release(pthreading.RLock())
 
     def test_acquire_nonblocking(self):
         lock = pthreading.Lock()
@@ -145,13 +135,12 @@ class TestCondition:
             for t in waiters:
                 t.join()
 
-
-class TestConditionNotify(TestCondition):
-    """
-    Test that Condition.wait() returns after notify().
-    """
-
-    def check(self, lock):
+    @pytest.mark.parametrize("lock", [
+        None,
+        pthreading.Lock(),
+        pthreading.RLock()
+    ])
+    def test_notify(self, lock):
         self.cond = pthreading.Condition(lock)
 
         for i in range(self.CONCURRENCY):
@@ -172,22 +161,12 @@ class TestConditionNotify(TestCondition):
 
         assert self.wokeup == self.CONCURRENCY
 
-    def test_default_lock(self):
-        self.check(lock=None)
-
-    def test_lock(self):
-        self.check(lock=pthreading.Lock())
-
-    def test_rlock(self):
-        self.check(lock=pthreading.RLock())
-
-
-class TestConditionNotifyAll(TestCondition):
-    """
-    Test that Condition.wait() returns after notifyAll().
-    """
-
-    def check(self, lock):
+    @pytest.mark.parametrize("lock", [
+        None,
+        pthreading.Lock(),
+        pthreading.RLock()
+    ])
+    def test_notify_all(self, lock):
         self.cond = pthreading.Condition(lock)
 
         with self.cond:
@@ -206,22 +185,15 @@ class TestConditionNotifyAll(TestCondition):
 
         assert self.wokeup == self.CONCURRENCY
 
-    def test_default_lock(self):
-        self.check(lock=None)
-
-    def test_lock(self):
-        self.check(lock=pthreading.Lock())
-
-    def test_rlock(self):
-        self.check(lock=pthreading.RLock())
-
-
-class TestConditionTimeout(TestCondition):
-    """
-    Test that Condition.wait(timeout) returns after deadline.
-    """
-
-    def check(self, lock, timeout):
+    @pytest.mark.parametrize("lock,timeout", [
+        (None, 1),
+        (pthreading.Lock(), 1),
+        (pthreading.RLock(), 1),
+        (None, 0.1),
+        (pthreading.Lock(), 0.1),
+        (pthreading.RLock(), 0.1),
+    ])
+    def test_timeout(self, lock, timeout):
         self.cond = pthreading.Condition(lock)
         self.wokeup_before_deadline = 0
         self.wokeup_after_deadline = 0
@@ -242,42 +214,21 @@ class TestConditionTimeout(TestCondition):
         assert self.wokeup_before_deadline == 0
         assert self.wokeup_after_deadline == self.CONCURRENCY
 
-    def test_integer_default_lock(self):
-        self.check(lock=None, timeout=1)
-
-    def test_integer_lock(self):
-        self.check(lock=pthreading.Lock(), timeout=1)
-
-    def test_integer_rlock(self):
-        self.check(lock=pthreading.RLock(), timeout=1)
-
-    def test_float_default_lock(self):
-        self.check(lock=None, timeout=0.1)
-
-    def test_float_lock(self):
-        self.check(lock=pthreading.Lock(), timeout=0.1)
-
-    def test_float_rlock(self):
-        self.check(lock=pthreading.RLock(), timeout=0.1)
-
-
-class TestConditionTimeoutNotify(TestCondition):
-    """
-    Test that Condition.wait(timeout) return before deadline on notify().
-    """
-
-    TIMEOUT = 1
-
-    def check(self, lock):
+    @pytest.mark.parametrize("lock,timeout", [
+        (None, 1),
+        (pthreading.Lock(), 1),
+        (pthreading.RLock(), 1),
+    ])
+    def test_timeout_notify(self, lock, timeout):
         self.cond = pthreading.Condition(lock)
         self.wokeup_before_deadline = 0
         self.wokeup_after_deadline = 0
 
         def waiter():
             with self.cond:
-                deadline = time() + self.TIMEOUT
+                deadline = time() + timeout
                 self.waiting += 1
-                self.cond.wait(self.TIMEOUT)
+                self.cond.wait(timeout)
                 if time() < deadline:
                     self.wokeup_before_deadline += 1
                 else:
@@ -291,19 +242,11 @@ class TestConditionTimeoutNotify(TestCondition):
         assert self.wokeup_before_deadline == self.CONCURRENCY
         assert self.wokeup_after_deadline == 0
 
-    def test_default_lock(self):
-        self.check(lock=None)
-
-    def test_lock(self):
-        self.check(lock=pthreading.Lock())
-
-    def test_rlock(self):
-        self.check(lock=pthreading.RLock())
-
 
 class TestEvent:
 
-    def _test(self, timeout):
+    @pytest.mark.parametrize("timeout", [None, 5])
+    def test_timeout_not_expired(self, timeout):
         log.info("Creating Event object")
         e = threading.Event()
 
@@ -320,22 +263,10 @@ class TestEvent:
         res = e.wait(timeout)
         assert res
 
-    def test_pass_with_timeout(self):
-        self._test(5)
-
-    def test_pass_without_timeout(self):
-        self._test(None)
-
-    def test_not_pass_timeout(self):
+    @pytest.mark.parametrize("timeout", [0, 0.5])
+    def test_timeout_expired(self, timeout):
         log.info("Creating Event object")
         e = threading.Event()
         log.info("Waiting for salvation (That will never come)")
-        res = e.wait(0.5)
-        assert not res
-
-    def test_zero_timeout(self):
-        log.info("Creating Event object")
-        e = threading.Event()
-        log.info("Waiting 0 for salvation (That will never come)")
-        res = e.wait(0)
+        res = e.wait(timeout)
         assert not res
