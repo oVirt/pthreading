@@ -41,7 +41,7 @@ For more control over the tests, use py.test directly. In this example
 we are running only the Event tests, using verbose mode, and aborting on
 the first failure:
 
-    py.test -k EventTests -vx tests.py
+    py.test -k TestEvent -vx tests.py
 
 In this example we run the tests and create a coverage report in html
 format:
