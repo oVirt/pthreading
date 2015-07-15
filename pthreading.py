@@ -56,6 +56,9 @@ import sys
 import pthread
 
 
+__version__ = "0.1.3-4"
+
+
 class _Lock(pthread.Mutex):
     """
     _Lock class mimics Python native threading.Lock() API on top of

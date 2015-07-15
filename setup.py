@@ -4,7 +4,7 @@ import pthreading
 
 
 setup(name='pthreading',
-      version='0.1.3-4',
+      version=pthreading.__version__,
       license='GPLv2+',
       url='http://git.fedorahosted.org/git/?p=pthreading.git',
       maintainer='Dan Kenigsberg',
