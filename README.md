@@ -27,6 +27,19 @@ pthreading.monkey_patch()
 This would hack the Linux-native threading module, and make it use
 Linux-native POSIX synchronization objects.
 
+## Hacking
+
+To perform pep8 check and run the tests:
+
+    tox
+
+To run only pep8 or the tests, specify the tox env:
+
+    tox -e unittests
+
+For more control over the tests, please run tests.py directly with either
+python or nosetests.
+
 ## Acknowledgements
 
 The pthreading code was originally written as part of Vdsm by Cyril
