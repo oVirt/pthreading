@@ -26,7 +26,7 @@ The implementation, however, is based on POSIX thread library as delivered
 by the libpthread. Lock and Condition are designed to be a drop-in
 replacement for their respective threading counterpart.
 
-Take a look at threading.py of Python 2. Notice that Event.wait() wakes 20
+Take a look at threading.py of Python 2. Notice that Condition.wait() wakes 20
 times a second and checks if the event has been set. This CPU hogging has been
 fixed in Python 3, but is not expected to change during Python 2 lifetime.
 
