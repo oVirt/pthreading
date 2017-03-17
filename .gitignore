@@ -1,4 +1,6 @@
-*.swp
 *.pyc
-build/
+*.swp
+.tox
+MANIFEST
 __pycache__
+build/
