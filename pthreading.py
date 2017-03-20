@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2012 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ import sys
 import pthread
 
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 
 class _Lock(pthread.Mutex):
