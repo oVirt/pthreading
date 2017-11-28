@@ -15,6 +15,10 @@ wakes 20 times a second and checks if the event has been set. This CPU
 hogging has been fixed in Python 3, but is not expected to change during
 Python 2 lifetime.
 
+Note: Condition object does not provide the n argument for notifying more
+than one waiter as in the standard interface api.
+(see https://bugzilla.redhat.com/show_bug.cgi?id=1117950)
+
 ## Usage
 
 To avoid this waste of resources, put in your main module:
