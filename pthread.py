@@ -36,8 +36,9 @@ LIBPTHREAD = "libpthread.so.0"
 
 # These come from pthread.h (via bits/pthreadtypes.h)
 # We prefer to be on a safe side and use sizes for 64 bit implementation
+# sizeof(pthread_mutex_t) is 48 bytes on AArch64, 40 bytes on x86_64.
 
-SIZEOF_MUTEX_T = 40
+SIZEOF_MUTEX_T = 48
 SIZEOF_COND_T = 48
 SIZEOF_MUTEXATTR_T = 4
 
