@@ -44,8 +44,8 @@ raise a RuntimeError.
 
 The pthreading code was originally written as part of
 `Vdsm <http://wiki.ovirt.org/wiki/Vdsm>`_ by Cyril Plisko, Saggi Mizrahi and
-others. For questions, comments and patches please contact `vdsm-devel
-<mailto:vdsm-devel@lists.fedorahosted.org>`_.
+others. For questions, comments and patches please contact `devel@ovirt
+<mailto:devel@ovirt.org>`_.
 """
 
 import time
@@ -56,7 +56,7 @@ import sys
 import pthread
 
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 
 
 class _Lock(pthread.Mutex):
