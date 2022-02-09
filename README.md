@@ -1,5 +1,9 @@
 # pthreading
 
+> IMPORTANT: This project has been dropped from oVirt.
+>
+> Keeping the following section only for reference.
+
 ## Overview
 
 Reimplement threading.Lock, RLock, and Condition with libpthread.
